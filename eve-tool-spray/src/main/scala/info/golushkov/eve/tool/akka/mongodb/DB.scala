@@ -1,6 +1,7 @@
 package info.golushkov.eve.tool.akka.mongodb
 import com.mongodb.ConnectionString
 import com.mongodb.connection.ConnectionPoolSettings
+import com.typesafe.config.ConfigFactory
 import info.golushkov.eve.tool.akka.models.{BlueprintActivities, BlueprintTime, Manufacturing, ManufacturingProduct}
 import info.golushkov.eve.tool.akka.mongodb.models._
 import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCollection, MongoDatabase, Observable}
@@ -26,7 +27,8 @@ object DB {
     DEFAULT_CODEC_REGISTRY)
   private val collections = "regions"::Nil
   private val mongoClient: MongoClient = MongoClient({
-    val connectionString = new ConnectionString("mongodb://localhost:27017")
+    val url = ConfigFactory.load().getString("app.mongodb.url")
+    val connectionString = new ConnectionString(url)
     MongoClientSettings
       .builder()
       .codecRegistry(DEFAULT_CODEC_REGISTRY)
