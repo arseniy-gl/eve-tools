@@ -14,6 +14,7 @@ import org.mongodb.scala.model.Filters.equal
 
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class RegionActor extends Actor with ActorLogging {
   import RegionActor._
@@ -25,7 +26,7 @@ class RegionActor extends Actor with ActorLogging {
 
   override def receive = {
     case GetAll =>
-      coll.find().toFuture().map(_.map(_.asScala)) pipeTo sender()
+      coll.find().toFuture().map(_.map(_.asScala).toList).map(GetAllResult) pipeTo sender()
 
     case WriteOrUpdate(region) =>
       val s: ActorRef = sender()
@@ -47,5 +48,6 @@ class RegionActor extends Actor with ActorLogging {
 
 object RegionActor {
   case object GetAll
+  case class GetAllResult(regions: List[Region])
   case class WriteOrUpdate(region: Region)
 }

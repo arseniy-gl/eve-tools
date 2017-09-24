@@ -2,6 +2,7 @@ package info.golushkov.eve.tool.akka.actors.loaders
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import info.golushkov.eve.tool.akka.actors.ApiActor
+import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
 import info.golushkov.eve.tool.akka.actors.mongo.{OrdersActor, RegionActor}
 import info.golushkov.eve.tool.akka.models.{Order, Region}
 
@@ -14,20 +15,17 @@ class OrdersLoader(ordersActor: ActorRef, regionActor: ActorRef, api: ActorRef) 
       log.info(s"Update - start!")
       regionActor ! RegionActor.GetAll
 
-    case any: List[AnyRef] => // TODO костыль (((
-      val regions = any.collect { case a: Region => a }
-      val orders = any.collect { case a: Order => a }
-      if (regions.nonEmpty) {
-        log.info(s"regions - ${regions.size}!")
-        this.regions = regions
-        self ! Next
-      } else if (orders.nonEmpty) {
-        log.info(s"loading orders - ${orders.size}!")
-        orders.foreach { o =>
-          ordersActor ! OrdersActor.WriteOrUpdate(o)
-        }
-        self ! Next
+    case GetAllResult(_regions) =>
+      log.info(s"regions - ${_regions.size}!")
+      this.regions = _regions
+      self ! Next
+
+    case orders: List[Order] =>
+      log.info(s"loading orders - ${orders.size}!")
+      orders.foreach { o =>
+        ordersActor ! OrdersActor.WriteOrUpdate(o)
       }
+      self ! Next
 
     case Next =>
       regions match {
