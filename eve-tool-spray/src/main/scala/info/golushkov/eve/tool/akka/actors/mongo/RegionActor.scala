@@ -28,12 +28,10 @@ class RegionActor extends Actor with ActorLogging {
       coll.find().toFuture().map(_.map(_.asScala)) pipeTo sender()
 
     case WriteOrUpdate(region) =>
-      log.info(s"WriteOrUpdate")
       val s: ActorRef = sender()
       coll.find(equal("id", region.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, region.asMongo)).pipeTo(self)(s)
 
     case WriteOrUpdate2(Some(res), region) =>
-      log.info(s"update region ${region.name}")
       coll.updateOne(equal("_id", res._id), combine(
         set("id", region.id),
         set("name", region.name),
@@ -41,7 +39,6 @@ class RegionActor extends Actor with ActorLogging {
       )).toFuture
 
     case WriteOrUpdate2(None, region) =>
-      log.info(s"new region ${region.name}")
       coll.insertOne(region).toFuture
   }
 

@@ -30,7 +30,6 @@ class OrdersLoader(ordersActor: ActorRef, regionActor: ActorRef, api: ActorRef) 
       }
 
     case Next =>
-      log.info(s"Next region for load orders")
       regions match {
         case region :: tail =>
           regions = tail

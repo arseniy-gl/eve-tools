@@ -15,12 +15,10 @@ class MarketGroupLoader(marketGroupActor: ActorRef, api: ActorRef) extends Actor
       api ! ApiActor.GetMarketsGroups
 
     case ids: List[Int] =>
-      log.info(s"processing... queue size = ${ids.size}")
       this.marketGroupIds = ids
       self ! Next
 
     case Next =>
-      log.info(s"Next load market group")
       marketGroupIds match {
         case id :: tail =>
           marketGroupIds = tail
@@ -30,7 +28,7 @@ class MarketGroupLoader(marketGroupActor: ActorRef, api: ActorRef) extends Actor
       }
 
     case mg: MarketGroup =>
-      log.info(s"load market group")
+      log.info(s"load market group [tail = ${marketGroupIds.size} ]")
       marketGroupActor ! MarketGroupActor.WriteOrUpdate(mg)
       self ! Next
   }

@@ -10,6 +10,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
 import akka.http.scaladsl.server.Directives._
+import akka.routing.BalancingPool
 import akka.util.Timeout
 import info.golushkov.eve.tool.akka.actors.{ApiActor, PriceReportActor}
 import info.golushkov.eve.tool.akka.actors.loaders._
@@ -37,7 +38,7 @@ object Main extends JsonSupport {
 
     val api = system.actorOf(Props(new ApiActor()), "ApiActor")
 
-    val marketGroupActor = system.actorOf(Props(new MarketGroupActor()), "MarketGroupActor")
+    val marketGroupActor = system.actorOf(BalancingPool(4).props(Props(new MarketGroupActor())), "MarketGroupActor")
     val ordersActor = system.actorOf(Props(new OrdersActor()), "OrdersActor")
     val priceActor = system.actorOf(Props(new PriceActor()), "PriceActor")
     val regionActor = system.actorOf(Props(new RegionActor()), "RegionActor")
@@ -51,11 +52,11 @@ object Main extends JsonSupport {
 
     val priceReportActor = system.actorOf(Props(new PriceReportActor(itemActor, priceActor, ordersActor)), "PriceReportActor")
 
-    system.scheduler.schedule(2 minutes, 5 days,  marketGroupLoader,  MarketGroupLoader.Update)
-    system.scheduler.schedule(4 minutes, 3 hours, ordersLoader,       OrdersLoader.Update)
-    system.scheduler.schedule(3 minutes, 1 days,  priceLoader,        PriceLoader.Update)
-    system.scheduler.schedule(5 seconds, 3 days,  regionLoader,       RegionLoader.Update)
-    system.scheduler.schedule(5 minutes, 7 days,  itemLoader,         ItemLoader.Update)
+    system.scheduler.schedule(5 seconds,    3 days,  regionLoader,       RegionLoader.Update)
+    system.scheduler.schedule(5 seconds,    5 days,  marketGroupLoader,  MarketGroupLoader.Update)
+    system.scheduler.schedule(5 seconds,    1 days,  priceLoader,        PriceLoader.Update)
+    system.scheduler.schedule(30 seconds,   7 days,  itemLoader,         ItemLoader.Update)
+    system.scheduler.schedule(10 minutes,   3 hours, ordersLoader,       OrdersLoader.Update)
 
     val route =
       respondWithDefaultHeader(`Access-Control-Allow-Origin`.*) {

@@ -2,13 +2,13 @@ package info.golushkov.eve.tool.akka.actors
 
 import java.time.{LocalDate, LocalDateTime}
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import info.golushkov.eve.tool.akka.models._
 import io.swagger.client.api.{MarketApi, UniverseApi}
 
 import scala.util.control.NonFatal
 
-class ApiActor extends Actor {
+class ApiActor extends Actor with ActorLogging {
 
   import ApiActor._
 
@@ -122,8 +122,9 @@ class ApiActor extends Actor {
         result = Some(fun())
         f = false
       } catch {
-        case NonFatal(_) =>
+        case NonFatal(ex) =>
           f = true
+          log.error(ex.getMessage)
           Thread.sleep(1000)
       }
     }

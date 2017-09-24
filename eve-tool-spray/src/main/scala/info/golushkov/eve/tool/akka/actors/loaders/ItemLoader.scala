@@ -7,20 +7,19 @@ import info.golushkov.eve.tool.akka.models.Item
 
 class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLogging{
   import ItemLoader._
-  private var itemIds: List[Int] = Nil
+  private var itemIds: List[Int] = Nil //TODO перевести в контекст
 
   override def receive = {
     case Update =>
       log.info(s"Update - start!")
-      api ! ApiActor.GetUniverseTypesTypeId
+      api ! ApiActor.GetUniverseTypes()
 
     case ids: List[Int] =>
-      log.info(s"processing... queue size = ${ids.size}")
-      this.itemIds = ids
+      this.itemIds ++= ids
       self ! Next
 
+
     case Next =>
-      log.info(s"next item")
       itemIds match {
         case id :: tail =>
           itemIds = tail
@@ -30,7 +29,7 @@ class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLog
       }
 
     case item: Item =>
-      log.info(s"load item!")
+      log.info(s"load item [tail = ${itemIds.size} ]")
       itemActor ! ItemActor.WriteOrUpdate(item)
       self ! Next
   }

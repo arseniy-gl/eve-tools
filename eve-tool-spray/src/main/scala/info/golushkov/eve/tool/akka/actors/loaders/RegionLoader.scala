@@ -29,7 +29,6 @@ class RegionLoader(regionActor: ActorRef, api: ActorRef) extends Actor with Acto
       self ! Next
 
     case Next =>
-      log.info(s"Next region")
       regionIds match {
         case id :: tail =>
           regionIds = tail
