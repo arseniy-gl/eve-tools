@@ -42,10 +42,10 @@ class OrdersActor extends Actor {
         set("itemId", order.itemId),
         set("remain", order.remain),
         set("total", order.total)
-      ))
+      )).toFuture
 
     case WriteOrUpdate2(None, order) =>
-      coll.insertOne(order)
+      coll.insertOne(order).toFuture
   }
 
   private case class WriteOrUpdate2(res: Option[OrderMongo], order: OrderMongo)

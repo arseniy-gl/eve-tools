@@ -3,3 +3,6 @@ sde/
 .gradle
 blueprints.json
 *.db
+*.class
+eve-tool-spray/out
+swagger/out

@@ -38,9 +38,9 @@ class PriceActor extends Actor {
         case Some(_id) =>
           coll.updateOne(equal("_id", _id), combine(
             set("adjustedPrice", price.adjustedPrice),
-            set("averagePrice", price.averagePrice))).observeOn(ec).toFuture()
+            set("averagePrice", price.averagePrice))).toFuture()
         case None =>
-            coll.insertOne(price.asMongo).observeOn(ec).toFuture()
+            coll.insertOne(price.asMongo).toFuture()
       }
   }
 }

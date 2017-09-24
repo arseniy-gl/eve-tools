@@ -36,9 +36,9 @@ class BlueprintActor extends Actor {
           coll.updateOne(equal("_id", _id), combine(
             set("name", blueprint.name),
             set("activities", blueprint.activities),
-            set("maxProductionLimit", blueprint.maxProductionLimit)))
+            set("maxProductionLimit", blueprint.maxProductionLimit))).toFuture
         case None =>
-          coll.insertOne(blueprint.asMongo)
+          coll.insertOne(blueprint.asMongo).toFuture
       }
   }
 }

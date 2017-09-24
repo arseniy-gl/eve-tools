@@ -54,7 +54,7 @@ object Main extends JsonSupport {
     system.scheduler.schedule(2 minutes, 5 days,  marketGroupLoader,  MarketGroupLoader.Update)
     system.scheduler.schedule(4 minutes, 3 hours, ordersLoader,       OrdersLoader.Update)
     system.scheduler.schedule(3 minutes, 1 days,  priceLoader,        PriceLoader.Update)
-    system.scheduler.schedule(1 minutes, 3 days,  regionLoader,       RegionLoader.Update)
+    system.scheduler.schedule(5 seconds, 3 days,  regionLoader,       RegionLoader.Update)
     system.scheduler.schedule(5 minutes, 7 days,  itemLoader,         ItemLoader.Update)
 
     val route =

@@ -35,10 +35,10 @@ class MarketGroupActor extends Actor {
         set("id", marketGroup.id),
         set("name", marketGroup.name),
         set("parentId", marketGroup.parentId),
-        set("types", marketGroup.types)))
+        set("types", marketGroup.types))).toFuture
 
     case WriteOrUpdate2(None, marketGroup) =>
-      coll.insertOne(marketGroup.asMongo)
+      coll.insertOne(marketGroup.asMongo).toFuture
   }
 
   private case class WriteOrUpdate2(res: Option[MarketGroupMongo], marketGroup: MarketGroup)

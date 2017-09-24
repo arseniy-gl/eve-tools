@@ -6,6 +6,8 @@ import akka.actor.{Actor, ActorRef}
 import info.golushkov.eve.tool.akka.models._
 import io.swagger.client.api.{MarketApi, UniverseApi}
 
+import scala.util.control.NonFatal
+
 class ApiActor extends Actor {
 
   import ApiActor._
@@ -15,10 +17,10 @@ class ApiActor extends Actor {
 
   override def receive: PartialFunction[Any, Unit] = {
     case GetUniverseRegions =>
-      sender() ! universeApi.getUniverseRegions().getOrElse(Nil)
+      sender() ! withRepeater { () => universeApi.getUniverseRegions().getOrElse(Nil) }
 
     case GetUniverseRegionsRegionId(id) =>
-      universeApi.getUniverseRegionsRegionId(id) match {
+      withRepeater { () => universeApi.getUniverseRegionsRegionId(id) } match {
         case Some(r) =>
           sender() ! Region(
             id = r.regionId,
@@ -30,7 +32,7 @@ class ApiActor extends Actor {
       }
 
     case GetUniverseTypesTypeId(id) =>
-      universeApi.getUniverseTypesTypeId(id) match {
+      withRepeater { () => universeApi.getUniverseTypesTypeId(id) } match {
         case Some(i) =>
           sender() ! Item(
             id = i.typeId,
@@ -42,10 +44,12 @@ class ApiActor extends Actor {
       }
 
     case GetMarketsGroups =>
-      sender() ! marketApi.getMarketsGroups().getOrElse(Nil)
+      sender() ! withRepeater { () => marketApi.getMarketsGroups().getOrElse(Nil) }
 
     case GetMarketsGroupsMarketGroupId(id) =>
-      marketApi.getMarketsGroupsMarketGroupId(id) match {
+      withRepeater { () =>
+        marketApi.getMarketsGroupsMarketGroupId(id)
+      } match {
         case Some(mg) =>
           sender() ! MarketGroup(
             id = mg.marketGroupId,
@@ -55,54 +59,75 @@ class ApiActor extends Actor {
       }
 
     case GetMarketsRegionIdHistory(regionId, typeId) =>
-      sender() ! marketApi.getMarketsRegionIdHistory(regionId, typeId)
+      sender() ! withRepeater { () => marketApi.getMarketsRegionIdHistory(regionId, typeId) }
 
     case GetMarketsPrices =>
-      sender() ! marketApi
-        .getMarketsPrices()
-        .getOrElse(Nil)
-        .flatMap { res =>
-          for {
-            adjustedPrice <- res.adjustedPrice.map(_.doubleValue())
-            averagePrice <- res.averagePrice.map(_.doubleValue())
-          } yield {
-            Price(
-              lastUpdate = LocalDate.now(),
-              adjustedPrice,
-              averagePrice,
-              res.typeId.intValue())
+      sender() ! withRepeater { () =>
+        marketApi
+          .getMarketsPrices()
+          .getOrElse(Nil)
+          .flatMap { res =>
+            for {
+              adjustedPrice <- res.adjustedPrice.map(_.doubleValue())
+              averagePrice <- res.averagePrice.map(_.doubleValue())
+            } yield {
+              Price(
+                lastUpdate = LocalDate.now(),
+                adjustedPrice,
+                averagePrice,
+                res.typeId.intValue())
+            }
           }
-        }
+      }
 
     case GetMarketsRegionIdOrders(regionId, page) =>
-      val res = marketApi
-        .getMarketsRegionIdOrders(regionId = regionId, page = Some(page))
-        .getOrElse(Nil)
-        .map { o =>
-          Order(
-            id = o.orderId,
-            lastUpdate = LocalDateTime.now(),
-            isBuy = o.isBuyOrder,
-            locationId = o.locationId,
-            price = o.price,
-            itemId = o.typeId,
-            remain = o.volumeRemain,
-            total = o.volumeTotal
-          )
-        }
+      val res = withRepeater { () =>
+        marketApi
+          .getMarketsRegionIdOrders(regionId = regionId, page = Some(page))
+          .getOrElse(Nil)
+      }.map { o =>
+        Order(
+          id = o.orderId,
+          lastUpdate = LocalDateTime.now(),
+          isBuy = o.isBuyOrder,
+          locationId = o.locationId,
+          price = o.price,
+          itemId = o.typeId,
+          remain = o.volumeRemain,
+          total = o.volumeTotal
+        )
+      }
       if(res.nonEmpty) {
         sender() ! res
         self forward GetMarketsRegionIdOrders(regionId, page+1)
       }
 
     case GetUniverseTypes(page) =>
-      val ids = universeApi
-        .getUniverseTypes(page = Some(page))
-        .getOrElse(Nil)
+      val ids = withRepeater { () =>
+        universeApi
+          .getUniverseTypes(page = Some(page))
+          .getOrElse(Nil)
+      }
       if (ids.nonEmpty) {
         sender() ! ids
         self forward GetUniverseTypes(page + 1)
       }
+  }
+
+  def withRepeater[T](fun: ()=> T): T = {
+    var f = true
+    var result:Option[T] = None // TODO ужасный ксотыль!
+    while (f) {
+      try {
+        result = Some(fun())
+        f = false
+      } catch {
+        case NonFatal(_) =>
+          f = true
+          Thread.sleep(1000)
+      }
+    }
+    result.get
   }
 
 }
