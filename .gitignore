@@ -1,0 +1,5 @@
+sde/
+.idea
+.gradle
+blueprints.json
+*.db
