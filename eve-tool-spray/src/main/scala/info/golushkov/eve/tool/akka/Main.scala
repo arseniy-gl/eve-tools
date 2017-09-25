@@ -14,6 +14,7 @@ import akka.routing.BalancingPool
 import akka.util.Timeout
 import info.golushkov.eve.tool.akka.actors.{ApiActor, PriceReportActor}
 import info.golushkov.eve.tool.akka.actors.loaders._
+import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
 import info.golushkov.eve.tool.akka.actors.mongo._
 import spray.json._
 import info.golushkov.eve.tool.akka.mongodb.DB
@@ -62,7 +63,7 @@ object Main extends JsonSupport {
       respondWithDefaultHeader(`Access-Control-Allow-Origin`.*) {
         path("regions") {
           get {
-            onSuccess((regionActor ? RegionActor.GetAll).map(_.asInstanceOf[List[Region]])) { res =>
+            onSuccess((regionActor ? RegionActor.GetAll).map(_.asInstanceOf[GetAllResult].regions)) { res =>
               complete(HttpEntity(`json`, res.toJson.compactPrint))
             }
           }
