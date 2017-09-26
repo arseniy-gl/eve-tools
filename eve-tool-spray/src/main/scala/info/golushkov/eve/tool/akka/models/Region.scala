@@ -1,6 +1,6 @@
 package info.golushkov.eve.tool.akka.models
 
 case class Region(
-                   id: Int, 
+                   id: Long,
                    name: String, 
-                   constellations: List[Int])
+                   constellations: List[Long])

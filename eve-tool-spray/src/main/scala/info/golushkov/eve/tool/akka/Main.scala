@@ -24,11 +24,12 @@ import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
+import scala.io.Source
 import scala.language.postfixOps
 
 object Main extends JsonSupport {
 
-  import ContentTypes.{`text/html(UTF-8)` => `text`, `application/json` => `json`}
+  import ContentTypes.{`text/plain(UTF-8)` => `text`, `application/json` => `json`}
   import info.golushkov.eve.tool.akka.mongodb.models.MongoConversion._
 
   def main(args: Array[String]): Unit = {
@@ -61,7 +62,11 @@ object Main extends JsonSupport {
 
     val route =
       respondWithDefaultHeader(`Access-Control-Allow-Origin`.*) {
-        path("regions") {
+        path("openapi") {
+          get {
+            complete(HttpEntity(`text`, Source.fromResource("swagger.yml").mkString))
+          }
+        } ~ path("regions") {
           get {
             onSuccess((regionActor ? RegionActor.GetAll).map(_.asInstanceOf[GetAllResult].regions)) { res =>
               complete(HttpEntity(`json`, res.toJson.compactPrint))
@@ -69,8 +74,13 @@ object Main extends JsonSupport {
           }
         } ~ path("category") {
           get {
-            onSuccess((marketGroupActor ? MarketGroupActor.GetAll).map(_.asInstanceOf[List[MarketGroup]])) { res =>
-              complete(HttpEntity(`json`, res.toJson.compactPrint))
+            parameter('parent_id.as[Int].?) { parentId =>
+              onSuccess(
+                (marketGroupActor ? MarketGroupActor.GetOnParent(parentId))
+                  .map(_.asInstanceOf[List[MarketGroup]])) {
+                res =>
+                  complete(HttpEntity(`json`, res.toJson.compactPrint))
+              }
             }
           }
         } ~ pathPrefix("prices") {
@@ -93,7 +103,7 @@ object Main extends JsonSupport {
         }
       }
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8090)
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
       bindingFuture

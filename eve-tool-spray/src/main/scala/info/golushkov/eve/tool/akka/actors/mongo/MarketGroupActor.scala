@@ -26,9 +26,18 @@ class MarketGroupActor extends Actor {
     case GetAll =>
       coll.find().toFuture().map(_.map(_.asScala).toList) to sender()
 
+    case GetOnParent(Some(id)) =>
+      coll.find(equal("parent", id))
+        .toFuture().map(_.map(_.asScala)) to sender()
+
+    case GetOnParent(None) =>
+      coll.find(equal("parent", None))
+        .toFuture().map(_.map(_.asScala)) to sender()
+
     case WriteOrUpdate(marketGroup) =>
       val s: ActorRef = sender()
-      coll.find(equal("id", marketGroup.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, marketGroup)).pipeTo(self)(s)
+      coll.find(equal("id", marketGroup.id))
+        .toFuture().map(res => WriteOrUpdate2(res.headOption, marketGroup)).pipeTo(self)(s)
 
     case WriteOrUpdate2(Some(res), marketGroup) =>
       coll.updateOne(equal("_id", res._id), combine(
@@ -46,6 +55,7 @@ class MarketGroupActor extends Actor {
 }
 
 object MarketGroupActor {
+  case class GetOnParent(parent: Option[Int])
   case object GetAll
   case class WriteOrUpdate(marketGroup: MarketGroup)
 }

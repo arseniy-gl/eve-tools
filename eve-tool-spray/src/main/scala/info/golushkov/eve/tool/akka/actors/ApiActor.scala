@@ -25,7 +25,7 @@ class ApiActor extends Actor with ActorLogging {
           sender() ! Region(
             id = r.regionId,
             name = r.name,
-            constellations = r.constellations)
+            constellations = r.constellations.map(_.toLong))
 
         case None => ()
 
@@ -83,7 +83,7 @@ class ApiActor extends Actor with ActorLogging {
     case GetMarketsRegionIdOrders(regionId, page) =>
       val res = withRepeater { () =>
         marketApi
-          .getMarketsRegionIdOrders(regionId = regionId, page = Some(page))
+          .getMarketsRegionIdOrders(regionId = regionId.toInt, page = Some(page))
           .getOrElse(Nil)
       }.map { o =>
         Order(
@@ -137,7 +137,7 @@ object ApiActor {
 
   case class GetUniverseTypes(page: Int = 1)
 
-  case class GetMarketsRegionIdOrders(regionId: Int, page: Int = 1)
+  case class GetMarketsRegionIdOrders(regionId: Long, page: Int = 1)
 
   case object GetUniverseRegions
 
