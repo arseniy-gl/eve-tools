@@ -1,10 +1,13 @@
 group 'info.golushkov.eve'
-version '1.0-SNAPSHOT'
+version '0.1.5'
 
 apply plugin: 'java'
 apply plugin: 'scala'
+apply plugin: 'application'
 
 sourceCompatibility = 1.8
+
+mainClassName = 'info.golushkov.eve.tool.akka.Main'
 
 repositories {
     mavenCentral()

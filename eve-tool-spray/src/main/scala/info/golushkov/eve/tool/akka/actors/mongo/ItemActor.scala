@@ -44,20 +44,17 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
       coll.find().toFuture().map(_.map(_.asScala)).map(_.filter(i => ids(i.id))) pipeTo sender()
 
     case WriteOrUpdate(item) =>
-      log.info(s"WriteOrUpdate")
       coll.find(equal("id", item.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, item.asMongo)).pipeTo(self)(sender())
 
     case WriteOrUpdate2(Some(res), item) =>
-      log.info(s"WriteOrUpdate2 - update")
       coll.updateOne(equal("_id", res._id), combine(
         set("id", item.id),
         set("iconId", item.iconId),
         set("name", item.name),
-        set("groupId", item.groupId)))
+        set("groupId", item.groupId))).toFuture
 
     case WriteOrUpdate2(None, item) =>
-      log.info(s"WriteOrUpdate2 - create")
-      coll.insertOne(item)
+      coll.insertOne(item).toFuture
   }
   private case class WriteOrUpdate2(res: Option[ItemMongo], item: ItemMongo)
 }

@@ -8,14 +8,14 @@ import org.mongodb.scala.bson.ObjectId
 package object models {
   case class RegionMongo(
                           _id: ObjectId,
-                          id: Int,
+                          id: Long,
                           name: String,
-                          constellations: List[Int])
+                          constellations: List[Long])
   object RegionMongo {
     def apply(
-               id: Int,
+               id: Long,
                name: String,
-               constellations: List[Int]): RegionMongo = new RegionMongo(new ObjectId(), id, name, constellations)
+               constellations: List[Long]): RegionMongo = new RegionMongo(new ObjectId(), id, name, constellations)
   }
 
   case class MarketGroupMongo(

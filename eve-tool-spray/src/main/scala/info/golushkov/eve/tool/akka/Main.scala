@@ -10,9 +10,11 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.`Access-Control-Allow-Origin`
 import akka.http.scaladsl.server.Directives._
+import akka.routing.BalancingPool
 import akka.util.Timeout
 import info.golushkov.eve.tool.akka.actors.{ApiActor, PriceReportActor}
 import info.golushkov.eve.tool.akka.actors.loaders._
+import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
 import info.golushkov.eve.tool.akka.actors.mongo._
 import spray.json._
 import info.golushkov.eve.tool.akka.mongodb.DB
@@ -22,11 +24,12 @@ import org.mongodb.scala.bson.collection.immutable.Document
 
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration._
+import scala.io.Source
 import scala.language.postfixOps
 
 object Main extends JsonSupport {
 
-  import ContentTypes.{`text/html(UTF-8)` => `text`, `application/json` => `json`}
+  import ContentTypes.{`text/plain(UTF-8)` => `text`, `application/json` => `json`}
   import info.golushkov.eve.tool.akka.mongodb.models.MongoConversion._
 
   def main(args: Array[String]): Unit = {
@@ -37,7 +40,7 @@ object Main extends JsonSupport {
 
     val api = system.actorOf(Props(new ApiActor()), "ApiActor")
 
-    val marketGroupActor = system.actorOf(Props(new MarketGroupActor()), "MarketGroupActor")
+    val marketGroupActor = system.actorOf(BalancingPool(4).props(Props(new MarketGroupActor())), "MarketGroupActor")
     val ordersActor = system.actorOf(Props(new OrdersActor()), "OrdersActor")
     val priceActor = system.actorOf(Props(new PriceActor()), "PriceActor")
     val regionActor = system.actorOf(Props(new RegionActor()), "RegionActor")
@@ -51,24 +54,33 @@ object Main extends JsonSupport {
 
     val priceReportActor = system.actorOf(Props(new PriceReportActor(itemActor, priceActor, ordersActor)), "PriceReportActor")
 
-    system.scheduler.schedule(2 minutes, 5 days,  marketGroupLoader,  MarketGroupLoader.Update)
-    system.scheduler.schedule(4 minutes, 3 hours, ordersLoader,       OrdersLoader.Update)
-    system.scheduler.schedule(3 minutes, 1 days,  priceLoader,        PriceLoader.Update)
-    system.scheduler.schedule(1 minutes, 3 days,  regionLoader,       RegionLoader.Update)
-    system.scheduler.schedule(5 minutes, 7 days,  itemLoader,         ItemLoader.Update)
+    system.scheduler.schedule(5 seconds,    3 days,  regionLoader,       RegionLoader.Update)
+    system.scheduler.schedule(5 seconds,    5 days,  marketGroupLoader,  MarketGroupLoader.Update)
+    system.scheduler.schedule(5 seconds,    1 days,  priceLoader,        PriceLoader.Update)
+    system.scheduler.schedule(30 seconds,   7 days,  itemLoader,         ItemLoader.Update)
+    system.scheduler.schedule(10 minutes,   3 hours, ordersLoader,       OrdersLoader.Update)
 
     val route =
       respondWithDefaultHeader(`Access-Control-Allow-Origin`.*) {
-        path("regions") {
+        path("openapi") {
           get {
-            onSuccess((regionActor ? RegionActor.GetAll).map(_.asInstanceOf[List[Region]])) { res =>
+            complete(HttpEntity(`text`, Source.fromResource("swagger.yml").mkString))
+          }
+        } ~ path("regions") {
+          get {
+            onSuccess((regionActor ? RegionActor.GetAll).map(_.asInstanceOf[GetAllResult].regions)) { res =>
               complete(HttpEntity(`json`, res.toJson.compactPrint))
             }
           }
         } ~ path("category") {
           get {
-            onSuccess((marketGroupActor ? MarketGroupActor.GetAll).map(_.asInstanceOf[List[MarketGroup]])) { res =>
-              complete(HttpEntity(`json`, res.toJson.compactPrint))
+            parameter('parent_id.as[Int].?) { parentId =>
+              onSuccess(
+                (marketGroupActor ? MarketGroupActor.GetOnParent(parentId))
+                  .map(_.asInstanceOf[List[MarketGroup]])) {
+                res =>
+                  complete(HttpEntity(`json`, res.toJson.compactPrint))
+              }
             }
           }
         } ~ pathPrefix("prices") {
@@ -91,7 +103,7 @@ object Main extends JsonSupport {
         }
       }
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 8090)
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => {
       bindingFuture

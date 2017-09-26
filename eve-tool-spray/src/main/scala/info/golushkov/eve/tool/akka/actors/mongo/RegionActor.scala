@@ -2,7 +2,7 @@ package info.golushkov.eve.tool.akka.actors.mongo
 
 import java.util.concurrent.Executors
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.pattern.pipe
 import akka.util.Timeout
 import org.mongodb.scala.model.Filters._
@@ -12,10 +12,11 @@ import info.golushkov.eve.tool.akka.mongodb.DB
 import info.golushkov.eve.tool.akka.mongodb.models.RegionMongo
 import org.mongodb.scala.model.Filters.equal
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
-class RegionActor extends Actor {
+class RegionActor extends Actor with ActorLogging {
   import RegionActor._
   import info.golushkov.eve.tool.akka.mongodb.models.MongoConversion._
   private val coll = DB.database.getCollection[RegionMongo]("regions")
@@ -25,7 +26,7 @@ class RegionActor extends Actor {
 
   override def receive = {
     case GetAll =>
-      coll.find().toFuture().map(_.map(_.asScala)) pipeTo sender()
+      coll.find().toFuture().map(_.map(_.asScala).toList).map(GetAllResult) pipeTo sender()
 
     case WriteOrUpdate(region) =>
       val s: ActorRef = sender()
@@ -36,10 +37,10 @@ class RegionActor extends Actor {
         set("id", region.id),
         set("name", region.name),
         set("constellations", region.constellations)
-      ))
+      )).toFuture
 
     case WriteOrUpdate2(None, region) =>
-      coll.insertOne(region)
+      coll.insertOne(region).toFuture
   }
 
   private case class WriteOrUpdate2(res: Option[RegionMongo], region: RegionMongo)
@@ -47,5 +48,6 @@ class RegionActor extends Actor {
 
 object RegionActor {
   case object GetAll
+  case class GetAllResult(regions: List[Region])
   case class WriteOrUpdate(region: Region)
 }

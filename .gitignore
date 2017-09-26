@@ -3,3 +3,13 @@ sde/
 .gradle
 blueprints.json
 *.db
+*.class
+eve-tool-spray/out
+swagger/out
+*.tar.gz
+*.tar
+dockers
+dockers/*
+eve-tool-spray/build
+swagger/build
+spec/dist

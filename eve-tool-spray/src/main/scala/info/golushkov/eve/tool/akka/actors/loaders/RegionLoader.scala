@@ -16,6 +16,7 @@ class RegionLoader(regionActor: ActorRef, api: ActorRef) extends Actor with Acto
   import RegionLoader._
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val to: Timeout = Timeout(5 seconds)
+  private var regionIds: List[Int] = Nil //TODO переделать на контекст
 
   override def receive: Receive = {
     case Update =>
@@ -23,17 +24,26 @@ class RegionLoader(regionActor: ActorRef, api: ActorRef) extends Actor with Acto
       api ! ApiActor.GetUniverseRegions
 
     case ids: List[Int] =>
-      ids match {
+      log.info(s"Load regionIds [${ids.size}]")
+      regionIds = ids
+      self ! Next
+
+    case Next =>
+      regionIds match {
         case id :: tail =>
+          regionIds = tail
           api ! ApiActor.GetUniverseRegionsRegionId(id)
-          self ! tail
 
         case Nil => ()
       }
 
     case r: Region =>
+      log.info(s"Load region")
       regionActor ! RegionActor.WriteOrUpdate(r)
+      self ! Next
   }
+
+  private case object Next
 }
 
 object RegionLoader {

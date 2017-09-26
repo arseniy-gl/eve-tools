@@ -1,10 +1,14 @@
 package info.golushkov.eve.tool.akka.mongodb
+import com.mongodb.ConnectionString
+import com.mongodb.connection.ConnectionPoolSettings
+import com.typesafe.config.ConfigFactory
 import info.golushkov.eve.tool.akka.models.{BlueprintActivities, BlueprintTime, Manufacturing, ManufacturingProduct}
 import info.golushkov.eve.tool.akka.mongodb.models._
-import org.mongodb.scala.{MongoClient, MongoCollection, MongoDatabase, Observable}
+import org.mongodb.scala.{MongoClient, MongoClientSettings, MongoCollection, MongoDatabase, Observable}
 import org.mongodb.scala.bson.codecs.Macros._
-import org.mongodb.scala.bson.codecs.DEFAULT_CODEC_REGISTRY
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
+import org.mongodb.scala.connection._
 
 object DB {
   private val codecRegistry = fromRegistries(
@@ -22,7 +26,40 @@ object DB {
       classOf[TradeHistoryMongo]),
     DEFAULT_CODEC_REGISTRY)
   private val collections = "regions"::Nil
-  private val mongoClient: MongoClient = MongoClient()
+  private val mongoClient: MongoClient = MongoClient({
+    val url = ConfigFactory.load().getString("app.mongodb.url")
+    val connectionString = new ConnectionString(url)
+    MongoClientSettings
+      .builder()
+      .codecRegistry(DEFAULT_CODEC_REGISTRY)
+      .clusterSettings(
+        ClusterSettings
+          .builder()
+          .applyConnectionString(connectionString)
+          .build())
+      .connectionPoolSettings(
+        ConnectionPoolSettings
+          .builder()
+          .applyConnectionString(connectionString)
+          .maxWaitQueueSize(1000)
+          .maxSize(200)
+          .build())
+      .serverSettings(
+        ServerSettings
+          .builder()
+          .build())
+      .credentialList(connectionString.getCredentialList)
+      .sslSettings(
+        SslSettings.builder()
+          .applyConnectionString(connectionString)
+          .build())
+      .socketSettings(
+        SocketSettings
+          .builder()
+          .applyConnectionString(connectionString)
+          .build())
+      .build()
+  })
   val database: MongoDatabase = mongoClient.getDatabase("eve-tool").withCodecRegistry(codecRegistry)
 
   checkCollection()
