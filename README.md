@@ -1,8 +1,3 @@
 # eve-tools
 
-## API
-
-`/regions`
-`/category`
-`/prices`
-`/prices/report`
+Описаение в формате openAPI доступно по адрессу: `/openapi`
