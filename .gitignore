@@ -13,3 +13,4 @@ dockers/*
 eve-tool-spray/build
 swagger/build
 spec/dist
+*.iml

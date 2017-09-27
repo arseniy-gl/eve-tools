@@ -35,7 +35,7 @@ trait MongoConversionAsMongo extends JsonSupport {
   }
 
   implicit def orderAsMongo(m: Order): AsMongo[OrderMongo] = {
-    new AsMongo(OrderMongo(m.id, m.lastUpdate.toDate, m.isBuy, m.locationId, m.price, m.itemId, m.remain, m.total))
+    new AsMongo(OrderMongo(m.id, m.lastUpdate.toDate, m.isBuy, m.locationId, m.regionId, m.price, m.itemId, m.remain, m.total))
   }
 
 }
@@ -67,7 +67,7 @@ trait MongoConversionAsScala extends JsonSupport  {
   }
 
   implicit def orderAsScala(m: OrderMongo): AsScala[Order] = {
-    new AsScala(Order(m.id, m.lastUpdate.toLocalDateTime, m.isBuy, m.locationId, m.price, m.itemId, m.remain, m.total))
+    new AsScala(Order(m.id, m.lastUpdate.toLocalDateTime, m.isBuy, m.locationId, m.regionId, m.price, m.itemId, m.remain, m.total))
   }
 
 }

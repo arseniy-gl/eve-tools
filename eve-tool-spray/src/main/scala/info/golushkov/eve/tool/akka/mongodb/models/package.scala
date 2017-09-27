@@ -84,6 +84,7 @@ package object models {
                     lastUpdate: Date,
                     isBuy: Boolean,
                     locationId: Long,
+                    regionId: Int,
                     price: Double,
                     itemId: Int,
                     remain: Int,
@@ -94,9 +95,11 @@ package object models {
                lastUpdate: Date,
                isBuy: Boolean,
                locationId: Long,
+               regionId: Int,
                price: Double,
                itemId: Int,
                remain: Int,
-               total: Int): OrderMongo = new OrderMongo(new ObjectId(), id, lastUpdate, isBuy, locationId, price, itemId, remain, total)
+               total: Int): OrderMongo = new OrderMongo(new ObjectId(), id, lastUpdate, isBuy, locationId, regionId,
+      price, itemId, remain, total)
   }
 }

@@ -49,8 +49,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val TradeHistoryFormat: RootJsonFormat[TradeHistory] = jsonFormat6(TradeHistory)
   implicit val ItemFormat: RootJsonFormat[Item] = jsonFormat4(Item)
   implicit val PriceFormat: RootJsonFormat[Price] = jsonFormat4(Price)
-  implicit val OrderFormat: RootJsonFormat[Order] = jsonFormat8(Order)
-  implicit val PriceReportRowFormat: RootJsonFormat[PriceReportRow] = jsonFormat6(PriceReportRow)
+  implicit val OrderFormat: RootJsonFormat[Order] = jsonFormat9(Order)
+  implicit val PriceReportRowFormat: RootJsonFormat[PriceReportRow] = jsonFormat4(PriceReportRow)
 
   implicit object TaskKindFormat extends RootJsonFormat[TaskKind] {
     import spray.json._

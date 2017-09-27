@@ -52,7 +52,7 @@ object Main extends JsonSupport {
     val regionLoader = system.actorOf(Props(new RegionLoader(regionActor, api)), "RegionLoader")
     val itemLoader = system.actorOf(Props(new ItemLoader(itemActor, api)), "ItemLoader")
 
-    val priceReportActor = system.actorOf(Props(new PriceReportActor(itemActor, priceActor, ordersActor)), "PriceReportActor")
+    val priceReportActor = system.actorOf(Props(new PriceReportActor(itemActor, ordersActor, regionActor)), "PriceReportActor")
 
     system.scheduler.schedule(5 seconds,    3 days,  regionLoader,       RegionLoader.Update)
     system.scheduler.schedule(5 seconds,    5 days,  marketGroupLoader,  MarketGroupLoader.Update)
@@ -91,7 +91,6 @@ object Main extends JsonSupport {
               }
             }
           } ~ path("report") {
-
             get {
               onSuccess {
                 (priceReportActor ? PriceReportActor.MakeReport).map(_.asInstanceOf[List[PriceReportRow]])
