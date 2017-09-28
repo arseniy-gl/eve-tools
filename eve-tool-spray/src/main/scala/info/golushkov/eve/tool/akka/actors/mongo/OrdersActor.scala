@@ -33,16 +33,10 @@ class OrdersActor extends Actor {
       coll.find(equal("id", order.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, order.asMongo)).pipeTo(self)(s)
 
     case WriteOrUpdate2(Some(res), order) =>
-      coll.updateOne(equal("_id", res._id), combine(
-        set("id", order.id),
-        set("lastUpdate", order.lastUpdate),
-        set("isBuy", order.isBuy),
-        set("locationId", order.locationId),
-        set("price", order.price),
-        set("itemId", order.itemId),
-        set("remain", order.remain),
-        set("total", order.total)
-      )).toFuture
+      for {
+        _ <- coll.deleteOne(equal("_id", res._id)).toFuture
+        _ <- coll.insertOne(order).toFuture
+      } yield ()
 
     case WriteOrUpdate2(None, order) =>
       coll.insertOne(order).toFuture

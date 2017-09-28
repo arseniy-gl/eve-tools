@@ -43,6 +43,9 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
       val ids = getChildrenItemsId(mgs, List(marketGroupId)).toSet
       coll.find().toFuture().map(_.map(_.asScala)).map(_.filter(i => ids(i.id))) pipeTo sender()
 
+    case GetOnId(id) =>
+      coll.find(equal("id", id)).toFuture().map(_.headOption.map(_.asScala)) pipeTo sender()
+
     case WriteOrUpdate(item) =>
       coll.find(equal("id", item.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, item.asMongo)).pipeTo(self)(sender())
 
@@ -61,5 +64,6 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
 
 object ItemActor{
   case class GetAllOnMarketGroup(marketGroupId: Int)
+  case class GetOnId(id: Int)
   case class WriteOrUpdate(item: Item)
 }
