@@ -45,20 +45,23 @@ object Main extends JsonSupport {
     val priceActor = system.actorOf(Props(new PriceActor()), "PriceActor")
     val regionActor = system.actorOf(Props(new RegionActor()), "RegionActor")
     val itemActor = system.actorOf(Props(new ItemActor(marketGroupActor)), "ItemActor")
+    val tradeHistoryActor = system.actorOf(Props(new TradeHistoryActor()), "TradeHistoryActor")
 
     val marketGroupLoader = system.actorOf(Props(new MarketGroupLoader(marketGroupActor, api)), "MarketGroupLoader")
     val ordersLoader = system.actorOf(Props(new OrdersLoader(ordersActor, regionActor, api)), "OrdersLoader")
     val priceLoader = system.actorOf(Props(new PriceLoader(priceActor, api)), "PriceLoader")
     val regionLoader = system.actorOf(Props(new RegionLoader(regionActor, api)), "RegionLoader")
     val itemLoader = system.actorOf(Props(new ItemLoader(itemActor, api)), "ItemLoader")
+    val tradeHistoryLoader = system.actorOf(Props(new TradeHistoryLoader(tradeHistoryActor, regionActor, itemActor, api)), "TradeHistoryLoader")
 
     val priceReportActor = system.actorOf(Props(new PriceReportActor(itemActor, ordersActor, regionActor)), "PriceReportActor")
 
-    system.scheduler.schedule(5 seconds,    3 days,  regionLoader,       RegionLoader.Update)
-    system.scheduler.schedule(5 seconds,    5 days,  marketGroupLoader,  MarketGroupLoader.Update)
-    system.scheduler.schedule(5 seconds,    1 days,  priceLoader,        PriceLoader.Update)
-    system.scheduler.schedule(30 seconds,   7 days,  itemLoader,         ItemLoader.Update)
-    system.scheduler.schedule(10 minutes,   3 hours, ordersLoader,       OrdersLoader.Update)
+    system.scheduler.schedule(5 seconds,    3 days,   regionLoader,       RegionLoader.Update)
+    system.scheduler.schedule(5 seconds,    5 days,   marketGroupLoader,  MarketGroupLoader.Update)
+    system.scheduler.schedule(5 seconds,    1 days,   priceLoader,        PriceLoader.Update)
+    system.scheduler.schedule(30 seconds,   7 days,   itemLoader,         ItemLoader.Update)
+    system.scheduler.schedule(10 minutes,   3 hours,  ordersLoader,       OrdersLoader.Update)
+    system.scheduler.schedule(30 minutes,   12 hours, tradeHistoryLoader, TradeHistoryLoader.Update)
 
     val route =
       respondWithDefaultHeader(`Access-Control-Allow-Origin`.*) {

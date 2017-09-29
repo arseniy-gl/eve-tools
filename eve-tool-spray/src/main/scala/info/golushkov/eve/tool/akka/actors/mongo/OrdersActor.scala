@@ -40,12 +40,16 @@ class OrdersActor extends Actor {
 
     case WriteOrUpdate2(None, order) =>
       coll.insertOne(order).toFuture
+
+    case ClearAll =>
+      coll.drop()
   }
 
   private case class WriteOrUpdate2(res: Option[OrderMongo], order: OrderMongo)
 }
 
 object OrdersActor {
+  case object ClearAll
   case class GetOnItemId(id: Int)
   case class WriteOrUpdate(order: Order)
 }

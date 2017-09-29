@@ -7,25 +7,41 @@ import info.golushkov.eve.tool.akka.models.Item
 
 class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLogging{
   import ItemLoader._
-  private var itemIds: List[Int] = Nil //TODO перевести в контекст
 
-  override def receive = {
+  def idle: Actor.Receive = {
     case Update =>
       log.info(s"Update - start!")
       api ! ApiActor.GetUniverseTypes()
 
-    case ids: List[Int] =>
-      this.itemIds ++= ids
+    case item: Item =>
+      log.info(s"load item [tail = 0 ]")
+      itemActor ! ItemActor.WriteOrUpdate(item)
       self ! Next
+  }
 
+  def inProcess(queue: List[Task] = Nil, itemIds: List[Int] = Nil): Actor.Receive = {
+    case Update =>
+      context.become(inProcess(queue :+ Task(Update, sender())))
+
+    case ids: List[Int] =>
+      context.become(inProcess(queue, itemIds ::: ids))
+      self ! Next
 
     case Next =>
       itemIds match {
         case id :: tail =>
-          itemIds = tail
+          context.become(inProcess(queue, tail))
           api ! ApiActor.GetUniverseTypesTypeId(id)
 
-        case Nil => ()
+        case Nil =>
+          queue.filterNot(_.msg == Update) match {
+            case Nil => context.become(idle)
+
+            case next::tail =>
+              context.become(inProcess(tail))
+              self ! next
+          }
+
       }
 
     case item: Item =>
@@ -34,6 +50,13 @@ class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLog
       self ! Next
   }
 
+  override def receive: Actor.Receive = {
+    case Update =>
+      log.info(s"Update - start!")
+      api ! ApiActor.GetUniverseTypes()
+  }
+
+  private case class Task(msg: AnyRef, sender: ActorRef)
   private case object Next
 }
 

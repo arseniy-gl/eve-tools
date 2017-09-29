@@ -13,6 +13,7 @@ class OrdersLoader(ordersActor: ActorRef, regionActor: ActorRef, api: ActorRef) 
   override def receive = {
     case Update =>
       log.info(s"Update - start!")
+      ordersActor ! OrdersActor.ClearAll
       regionActor ! RegionActor.GetAll
 
     case GetAllResult(_regions) =>

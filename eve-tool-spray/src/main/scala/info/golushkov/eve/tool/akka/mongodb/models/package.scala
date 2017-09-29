@@ -50,6 +50,8 @@ package object models {
 
   case class TradeHistoryMongo(
                                 _id: ObjectId,
+                                regionId: Long,
+                                itemId: Long,
                                 average: Float,
                                 date: Date,
                                 highest: Float,
@@ -59,12 +61,23 @@ package object models {
 
   object TradeHistoryMongo {
     def apply(
+               regionId: Long,
+               itemId: Long,
                average: Float,
                date: Date,
                highest: Float,
                lowest: Float,
                orderCount: Long,
-               volume: Long): TradeHistoryMongo = new TradeHistoryMongo(new ObjectId(), average, date, highest, lowest, orderCount, volume)
+               volume: Long): TradeHistoryMongo = new TradeHistoryMongo(
+      new ObjectId(),
+      regionId,
+      itemId,
+      average,
+      date,
+      highest,
+      lowest,
+      orderCount,
+      volume)
   }
 
   case class ItemMongo(_id: ObjectId, id: Int, iconId: Option[Int], name: String, groupId: Int)
