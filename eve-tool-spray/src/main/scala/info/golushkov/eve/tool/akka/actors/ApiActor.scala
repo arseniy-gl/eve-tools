@@ -17,10 +17,10 @@ class ApiActor extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case GetUniverseRegions =>
-      sender() ! withRepeater { () => universeApi.getUniverseRegions().getOrElse(Nil) }
+      sender() ! withRepeater { universeApi.getUniverseRegions().getOrElse(Nil) }
 
     case GetUniverseRegionsRegionId(id) =>
-      withRepeater { () => universeApi.getUniverseRegionsRegionId(id) } match {
+      withRepeater { universeApi.getUniverseRegionsRegionId(id) } match {
         case Some(r) =>
           sender() ! Region(
             id = r.regionId,
@@ -32,7 +32,7 @@ class ApiActor extends Actor with ActorLogging {
       }
 
     case GetUniverseTypesTypeId(id) =>
-      withRepeater { () => universeApi.getUniverseTypesTypeId(id) } match {
+      withRepeater { universeApi.getUniverseTypesTypeId(id) } match {
         case Some(i) =>
           sender() ! Item(
             id = i.typeId,
@@ -44,10 +44,10 @@ class ApiActor extends Actor with ActorLogging {
       }
 
     case GetMarketsGroups =>
-      sender() ! withRepeater { () => marketApi.getMarketsGroups().getOrElse(Nil) }
+      sender() ! withRepeater { marketApi.getMarketsGroups().getOrElse(Nil) }
 
     case GetMarketsGroupsMarketGroupId(id) =>
-      withRepeater { () =>
+      withRepeater {
         marketApi.getMarketsGroupsMarketGroupId(id)
       } match {
         case Some(mg) =>
@@ -59,10 +59,12 @@ class ApiActor extends Actor with ActorLogging {
       }
 
     case GetMarketsRegionIdHistory(regionId, typeId) =>
-      sender() ! withRepeater { () => marketApi.getMarketsRegionIdHistory(regionId, typeId) }
+      sender() ! withRepeater {
+        marketApi.getMarketsRegionIdHistory(regionId.toInt, typeId)
+      }
 
     case GetMarketsPrices =>
-      sender() ! withRepeater { () =>
+      sender() ! withRepeater {
         marketApi
           .getMarketsPrices()
           .getOrElse(Nil)
@@ -81,7 +83,7 @@ class ApiActor extends Actor with ActorLogging {
       }
 
     case GetMarketsRegionIdOrders(regionId, page) =>
-      val res = withRepeater { () =>
+      val res = withRepeater {
         marketApi
           .getMarketsRegionIdOrders(regionId = regionId.toInt, page = Some(page))
           .getOrElse(Nil)
@@ -103,7 +105,7 @@ class ApiActor extends Actor with ActorLogging {
       }
 
     case GetUniverseTypes(page) =>
-      val ids = withRepeater { () =>
+      val ids = withRepeater {
         universeApi
           .getUniverseTypes(page = Some(page))
           .getOrElse(Nil)
@@ -114,7 +116,7 @@ class ApiActor extends Actor with ActorLogging {
       }
   }
 
-  def withRepeater[T](fun: ()=> T): T = {
+  def withRepeater[T](fun: => T): T = {
     var f = true
     var result:Option[T] = None // TODO ужасный ксотыль!
     while (f) {
@@ -151,6 +153,6 @@ object ApiActor {
 
   case object GetMarketsPrices
 
-  case class GetMarketsRegionIdHistory(regionId: Int, typeId: Int)
+  case class GetMarketsRegionIdHistory(regionId: Long, typeId: Int)
 
 }
