@@ -58,12 +58,18 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
 
     case WriteOrUpdate2(None, item) =>
       coll.insertOne(item).toFuture
+
+    case GetAll =>
+      coll.find().toFuture().map(res => GetAllResult(res.map(_.asScala).toList)) pipeTo sender()
   }
   private case class WriteOrUpdate2(res: Option[ItemMongo], item: ItemMongo)
 }
 
 object ItemActor{
+  case object GetAll
   case class GetAllOnMarketGroup(marketGroupId: Int)
   case class GetOnId(id: Int)
   case class WriteOrUpdate(item: Item)
+
+  case class GetAllResult(items: List[Item])
 }

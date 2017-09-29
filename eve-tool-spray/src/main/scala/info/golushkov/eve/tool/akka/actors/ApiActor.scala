@@ -4,6 +4,7 @@ import java.time.{LocalDate, LocalDateTime}
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import info.golushkov.eve.tool.akka.models._
+import info.golushkov.eve.tool.akka.utils.DateConverter
 import io.swagger.client.api.{MarketApi, UniverseApi}
 
 import scala.util.control.NonFatal
@@ -11,6 +12,7 @@ import scala.util.control.NonFatal
 class ApiActor extends Actor with ActorLogging {
 
   import ApiActor._
+  import DateConverter._
 
   private val universeApi = new UniverseApi()
   private val marketApi = new MarketApi()
@@ -61,6 +63,18 @@ class ApiActor extends Actor with ActorLogging {
     case GetMarketsRegionIdHistory(regionId, typeId) =>
       sender() ! withRepeater {
         marketApi.getMarketsRegionIdHistory(regionId.toInt, typeId)
+          .getOrElse(Nil)
+          .map { res =>
+            TradeHistory(
+              regionId = regionId,
+              itemId = typeId,
+              average = res.average,
+              date = res.date.toLocalDate,
+              highest = res.highest,
+              lowest = res.lowest,
+              orderCount = res.orderCount,
+              volume = res.volume)
+          }
       }
 
     case GetMarketsPrices =>
