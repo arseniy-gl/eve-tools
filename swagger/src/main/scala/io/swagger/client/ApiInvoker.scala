@@ -40,7 +40,7 @@ object ScalaJsonUtil {
     mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     mapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY)
-    mapper.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES)
+    mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
     mapper
   }
 }

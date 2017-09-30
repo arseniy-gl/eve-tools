@@ -14,8 +14,8 @@ class MarketGroupLoader(marketGroupActor: ActorRef, api: ActorRef) extends Actor
       log.info(s"Update - start!")
       api ! ApiActor.GetMarketsGroups
 
-    case ids: List[Int] =>
-      this.marketGroupIds = ids
+    case ids: List[_] =>
+      this.marketGroupIds = ids.collect { case id: Int => id }
       self ! Next
 
     case Next =>

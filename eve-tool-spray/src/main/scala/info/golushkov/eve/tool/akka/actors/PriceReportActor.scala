@@ -6,68 +6,53 @@ import akka.actor.{Actor, ActorRef}
 import akka.pattern.ask
 import akka.pattern.pipe
 import akka.util.Timeout
-import info.golushkov.eve.tool.akka.actors.mongo.{ItemActor, OrdersActor, PriceActor}
-import info.golushkov.eve.tool.akka.models.{Item, Order, Price, PriceReportRow}
+import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
+import info.golushkov.eve.tool.akka.actors.mongo.{ItemActor, OrdersActor, RegionActor}
+import info.golushkov.eve.tool.akka.models.{Item, Order, PriceReportRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
-class PriceReportActor(itemActor: ActorRef, priceActor: ActorRef, ordersActor: ActorRef) extends Actor {
+class PriceReportActor(
+                        itemActor: ActorRef,
+                        ordersActor: ActorRef,
+                        regionsActor: ActorRef) extends Actor {
   import PriceReportActor._
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val to: Timeout = Timeout(5 seconds)
 
-  private def withContext(
-                           _queue: List[(ActorRef, MakeReport)] = Nil,
-                           _working: Boolean = false,
-                           _prices: List[Price] = Nil,
-                           _items: List[Item] = Nil,
-                           _orders: List[Order] = Nil): Actor.Receive = {
-    case MakeReport(id) =>
-      if(_working) {
-        context.become(withContext(_queue :+ (sender() -> MakeReport(id)), _working, _prices, _items, _orders))
-      } else {
-        context.become(withContext(_working = true))
-        itemActor ! ItemActor.GetAllOnMarketGroup(id)
-        priceActor ! PriceActor.GetAll
-      }
-
-    case items:List[Item] =>
-      context.become(withContext(_queue, _working = true, _prices, items, _orders))
-      items.foreach { i =>
-        ordersActor ! OrdersActor.GetOnItemId(i.id)
-      }
-  }
-
-  override def receive = {
+  override def receive:Actor.Receive = {
     case MakeReport(id) =>
       (for {
-        items <- (itemActor ? ItemActor.GetAllOnMarketGroup(id)).map(_.asInstanceOf[List[Item]])
-        prices <- (priceActor ? PriceActor.GetAll).map(_.asInstanceOf[List[Price]])
+        items <- (itemActor ? ItemActor.GetOnId(id)).map(_.asInstanceOf[Option[Item]])
+        regions <- (regionsActor ? RegionActor.GetAll).map(_.asInstanceOf[GetAllResult].regions)
         ordersWithItem <- Future.sequence {
           items.map { i =>
             (ordersActor ? OrdersActor.GetOnItemId(i.id))
               .map { res =>
                 i -> res.asInstanceOf[List[Order]]
               }
-          }
+          } toList
         }
       } yield {
-        ordersWithItem.map {
-          case (item, orders) =>
-            PriceReportRow(
-              name = item.name,
-              price = prices.find(p => p.typeId == item.id).map(_.adjustedPrice).getOrElse(0),
-              lowBuy = orders.filter(_.isBuy).map(_.price).min,
-              highBuy = orders.filter(_.isBuy).map(_.price).max,
-              lowSell = orders.filterNot(_.isBuy).map(_.price).min,
-              highSell = orders.filterNot(_.isBuy).map(_.price).max)
-        }
+        ordersWithItem
+          .flatMap {
+            case (item, orders) =>
+              orders.groupBy(_.regionId).map {
+                case (regionId, _orders) =>
+                  PriceReportRow(
+                    itemName = item.name,
+                    regionName = regions.find(_.id == regionId).map(_.name).getOrElse(""),
+                    bestBuy = _orders.filter(_.isBuy).map(_.price).max,
+                    bestSell = _orders.filterNot(_.isBuy).map(_.price).min)
+              }
+          }
       }) pipeTo sender()
 
   }
 }
 
 object PriceReportActor {
-  case class MakeReport(groupId: Int)
+  case class MakeReport(itemId: Int)
 }

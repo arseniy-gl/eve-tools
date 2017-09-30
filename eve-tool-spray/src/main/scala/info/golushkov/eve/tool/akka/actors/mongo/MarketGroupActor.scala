@@ -14,6 +14,8 @@ import info.golushkov.eve.tool.akka.mongodb.models._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+import scala.language.postfixOps
+
 class MarketGroupActor extends Actor {
   import MarketGroupActor._
   import MongoConversion._

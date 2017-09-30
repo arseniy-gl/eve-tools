@@ -23,7 +23,7 @@ trait MongoConversionAsMongo extends JsonSupport {
   }
 
   implicit def tradeHistoryAsMongo(m: TradeHistory): AsMongo[TradeHistoryMongo] = {
-    new AsMongo(TradeHistoryMongo(m.average, m.date.toDate, m.highest, m.lowest, m.orderCount, m.volume))
+    new AsMongo(TradeHistoryMongo(m.regionId, m.itemId, m.average, m.date.toDate, m.highest, m.lowest, m.orderCount, m.volume))
   }
 
   implicit def itemAsMongo(m: Item): AsMongo[ItemMongo] = {
@@ -35,7 +35,7 @@ trait MongoConversionAsMongo extends JsonSupport {
   }
 
   implicit def orderAsMongo(m: Order): AsMongo[OrderMongo] = {
-    new AsMongo(OrderMongo(m.id, m.lastUpdate.toDate, m.isBuy, m.locationId, m.price, m.itemId, m.remain, m.total))
+    new AsMongo(OrderMongo(m.id, m.lastUpdate.toDate, m.isBuy, m.locationId, m.regionId, m.price, m.itemId, m.remain, m.total))
   }
 
 }
@@ -55,7 +55,7 @@ trait MongoConversionAsScala extends JsonSupport  {
   }
 
   implicit def tradeHistoryAsScala(m: TradeHistoryMongo): AsScala[TradeHistory] = {
-    new AsScala(TradeHistory(m.average, m.date.toLocalDate, m.highest, m.lowest, m.orderCount, m.volume))
+    new AsScala(TradeHistory(m.regionId, m.itemId, m.average, m.date.toLocalDate, m.highest, m.lowest, m.orderCount, m.volume))
   }
 
   implicit def itemAsScala(m: ItemMongo): AsScala[Item] = {
@@ -67,7 +67,7 @@ trait MongoConversionAsScala extends JsonSupport  {
   }
 
   implicit def orderAsScala(m: OrderMongo): AsScala[Order] = {
-    new AsScala(Order(m.id, m.lastUpdate.toLocalDateTime, m.isBuy, m.locationId, m.price, m.itemId, m.remain, m.total))
+    new AsScala(Order(m.id, m.lastUpdate.toLocalDateTime, m.isBuy, m.locationId, m.regionId, m.price, m.itemId, m.remain, m.total))
   }
 
 }

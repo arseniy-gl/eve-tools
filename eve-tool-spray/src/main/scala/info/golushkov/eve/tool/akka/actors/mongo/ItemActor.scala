@@ -16,6 +16,8 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+import scala.language.postfixOps
+
 class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with ActorLogging {
   import ItemActor._
   import MongoConversion._
@@ -36,12 +38,15 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
 
   }
 
-  override def receive = {
+  override def receive:Actor.Receive = {
     case GetAllOnMarketGroup(marketGroupId) =>
       log.info(s"GetAllOnMarketGroup($marketGroupId)")
       val mgs = (marketGroupActor ? MarketGroupActor.GetAll).map(_.asInstanceOf[List[MarketGroup]]).await
       val ids = getChildrenItemsId(mgs, List(marketGroupId)).toSet
       coll.find().toFuture().map(_.map(_.asScala)).map(_.filter(i => ids(i.id))) pipeTo sender()
+
+    case GetOnId(id) =>
+      coll.find(equal("id", id)).toFuture().map(_.headOption.map(_.asScala)) pipeTo sender()
 
     case WriteOrUpdate(item) =>
       coll.find(equal("id", item.id)).toFuture().map(res => WriteOrUpdate2(res.headOption, item.asMongo)).pipeTo(self)(sender())
@@ -55,11 +60,18 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
 
     case WriteOrUpdate2(None, item) =>
       coll.insertOne(item).toFuture
+
+    case GetAll =>
+      coll.find().toFuture().map(res => GetAllResult(res.map(_.asScala).toList)) pipeTo sender()
   }
   private case class WriteOrUpdate2(res: Option[ItemMongo], item: ItemMongo)
 }
 
 object ItemActor{
+  case object GetAll
   case class GetAllOnMarketGroup(marketGroupId: Int)
+  case class GetOnId(id: Int)
   case class WriteOrUpdate(item: Item)
+
+  case class GetAllResult(items: List[Item])
 }

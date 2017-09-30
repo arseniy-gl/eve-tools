@@ -7,6 +7,7 @@ case class Order(
                   lastUpdate: LocalDateTime,
                   isBuy: Boolean,
                   locationId: Long,
+                  regionId: Long,
                   price: Double,
                   itemId: Int,
                   remain: Int,
