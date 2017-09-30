@@ -13,6 +13,16 @@ repositories {
     mavenCentral()
 }
 
+distributions {
+    main {
+        baseName = 'eve-tools-server'
+    }
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.additionalParameters = ["-feature"]
+}
+
 dependencies {
     compile 'org.scala-lang:scala-library:2.12.3'
     compile 'org.mongodb.scala:mongo-scala-driver_2.12:2.1.0'

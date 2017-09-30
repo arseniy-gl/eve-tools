@@ -2,6 +2,7 @@ package info.golushkov.eve.tool.akka.actors.loaders
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import info.golushkov.eve.tool.akka.actors.ApiActor
+import info.golushkov.eve.tool.akka.actors.ApiActor.ResultGetMarketsRegionIdOrders
 import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
 import info.golushkov.eve.tool.akka.actors.mongo.{OrdersActor, RegionActor}
 import info.golushkov.eve.tool.akka.models.{Order, Region}
@@ -21,7 +22,7 @@ class OrdersLoader(ordersActor: ActorRef, regionActor: ActorRef, api: ActorRef) 
       this.regions = _regions
       self ! Next
 
-    case orders: List[Order] =>
+    case ResultGetMarketsRegionIdOrders(orders) =>
       log.info(s"loading orders - ${orders.size}!")
       orders.foreach { o =>
         ordersActor ! OrdersActor.WriteOrUpdate(o)

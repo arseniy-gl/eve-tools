@@ -14,3 +14,5 @@ eve-tool-spray/build
 swagger/build
 spec/dist
 *.iml
+*.dev.conf
+Dockerfile

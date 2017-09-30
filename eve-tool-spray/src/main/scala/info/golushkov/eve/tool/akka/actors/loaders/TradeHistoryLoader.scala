@@ -2,6 +2,7 @@ package info.golushkov.eve.tool.akka.actors.loaders
 
 import akka.actor.{Actor, ActorRef}
 import info.golushkov.eve.tool.akka.actors.ApiActor
+import info.golushkov.eve.tool.akka.actors.ApiActor.ResultGetMarketsRegionIdHistory
 import info.golushkov.eve.tool.akka.actors.mongo.{ItemActor, RegionActor, TradeHistoryActor}
 import info.golushkov.eve.tool.akka.models.{Item, Region, TradeHistory}
 
@@ -15,6 +16,7 @@ class TradeHistoryLoader(
   def inProcess(items:List[Item] = Nil, regions:List[Region] = Nil): Actor.Receive = {
     case Next =>
       items match {
+        case Nil => context.become(idle)
         case item :: tail =>
           context.become(inProcess(tail, regions))
           regions.foreach { region =>
@@ -22,7 +24,7 @@ class TradeHistoryLoader(
           }
       }
 
-    case histories: List[TradeHistory] => processResult(histories)
+    case ResultGetMarketsRegionIdHistory(histories) => processResult(histories)
 
     case RegionActor.GetAllResult(_regions) =>
       context.become(inProcess(items, _regions))
@@ -39,7 +41,8 @@ class TradeHistoryLoader(
       regionActor ! RegionActor.GetAll
       itemsActor ! ItemActor.GetOnId
 
-    case histories: List[TradeHistory] => processResult(histories)
+
+    case ResultGetMarketsRegionIdHistory(histories) => processResult(histories)
 
   }
 

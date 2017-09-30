@@ -4,16 +4,15 @@ import java.util.concurrent.Executors
 
 import akka.actor.{Actor, ActorLogging}
 import akka.util.Timeout
-import akka.pattern.pipe
 import info.golushkov.eve.tool.akka.models.TradeHistory
 import info.golushkov.eve.tool.akka.mongodb.DB
 import info.golushkov.eve.tool.akka.mongodb.models._
 import info.golushkov.eve.tool.akka.utils.UberFuture
 import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.model.Updates._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class TradeHistoryActor extends Actor with UberFuture with ActorLogging {
   import MongoConversion._

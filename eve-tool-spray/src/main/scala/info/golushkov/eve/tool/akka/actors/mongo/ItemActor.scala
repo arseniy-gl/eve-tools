@@ -16,6 +16,8 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
+import scala.language.postfixOps
+
 class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with ActorLogging {
   import ItemActor._
   import MongoConversion._
@@ -36,7 +38,7 @@ class ItemActor(marketGroupActor: ActorRef) extends Actor with UberFuture with A
 
   }
 
-  override def receive = {
+  override def receive:Actor.Receive = {
     case GetAllOnMarketGroup(marketGroupId) =>
       log.info(s"GetAllOnMarketGroup($marketGroupId)")
       val mgs = (marketGroupActor ? MarketGroupActor.GetAll).map(_.asInstanceOf[List[MarketGroup]]).await

@@ -4,7 +4,6 @@ import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import info.golushkov.eve.tool.akka.models.TaskKind.{LoadBlueprints, LoadItems, LoadMarketGroups, LoadRegions}
 import spray.json.{DefaultJsonProtocol, JsString, JsValue, RootJsonFormat}
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
@@ -46,36 +45,10 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val BlueprintActivitiesFormat: RootJsonFormat[BlueprintActivities] = jsonFormat4(BlueprintActivities)
   implicit val BlueprintFormat: RootJsonFormat[Blueprint] = jsonFormat4(Blueprint)
 
-  implicit val TradeHistoryFormat: RootJsonFormat[TradeHistory] = jsonFormat6(TradeHistory)
+  implicit val TradeHistoryFormat: RootJsonFormat[TradeHistory] = jsonFormat8(TradeHistory)
   implicit val ItemFormat: RootJsonFormat[Item] = jsonFormat4(Item)
   implicit val PriceFormat: RootJsonFormat[Price] = jsonFormat4(Price)
   implicit val OrderFormat: RootJsonFormat[Order] = jsonFormat9(Order)
   implicit val PriceReportRowFormat: RootJsonFormat[PriceReportRow] = jsonFormat4(PriceReportRow)
-
-  implicit object TaskKindFormat extends RootJsonFormat[TaskKind] {
-    import spray.json._
-
-    override def read(json: JsValue): TaskKind = {
-      val fields = json.asJsObject.fields
-      fields("taskKind") match {
-        case JsString("LoadRegions") => LoadRegions
-        case JsString("LoadMarketGroups") => LoadMarketGroups
-        case JsString("LoadBlueprints") => LoadBlueprints
-        case JsString("LoadItems") => LoadItems
-      }
-    }
-
-    override def write(obj: TaskKind): JsValue = {
-      obj match {
-        case LoadRegions => Map("taskKind" -> "LoadRegions").toJson
-        case LoadMarketGroups => Map("taskKind" -> "LoadMarketGroups").toJson
-        case LoadBlueprints => Map("taskKind" -> "LoadBlueprints").toJson
-        case LoadItems => Map("taskKind" -> "LoadItems").toJson
-
-      }
-    }
-  }
-
-  implicit val TaskFormat: RootJsonFormat[Task] = jsonFormat2(Task)
 
 }

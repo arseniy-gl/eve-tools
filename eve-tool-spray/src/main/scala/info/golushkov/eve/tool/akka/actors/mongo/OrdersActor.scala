@@ -1,19 +1,19 @@
 package info.golushkov.eve.tool.akka.actors.mongo
 
-import java.time.LocalDateTime
 import java.util.concurrent.Executors
 
 import akka.actor.Actor
 import akka.pattern.pipe
 import akka.util.Timeout
 import org.mongodb.scala.model.Filters._
-import org.mongodb.scala.model.Updates._
 import info.golushkov.eve.tool.akka.models.Order
 import info.golushkov.eve.tool.akka.mongodb.DB
 import info.golushkov.eve.tool.akka.mongodb.models.OrderMongo
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+
+import scala.language.postfixOps
 
 class OrdersActor extends Actor {
   import OrdersActor._
@@ -24,7 +24,7 @@ class OrdersActor extends Actor {
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val to: Timeout = Timeout(5 seconds)
 
-  override def receive = {
+  override def receive:Actor.Receive = {
     case GetOnItemId(id) =>
       coll.find(equal("itemId", id)).toFuture().map(_.map(_.asScala).toList) pipeTo sender()
 

@@ -11,6 +11,7 @@ class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLog
   def idle: Actor.Receive = {
     case Update =>
       log.info(s"Update - start!")
+      context.become(inProcess())
       api ! ApiActor.GetUniverseTypes()
 
     case item: Item =>
@@ -19,12 +20,12 @@ class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLog
       self ! Next
   }
 
-  def inProcess(queue: List[Task] = Nil, itemIds: List[Int] = Nil): Actor.Receive = {
+  private def inProcess(queue: List[Task] = Nil, itemIds: List[Int] = Nil): Actor.Receive = {
     case Update =>
       context.become(inProcess(queue :+ Task(Update, sender())))
 
-    case ids: List[Int] =>
-      context.become(inProcess(queue, itemIds ::: ids))
+    case ids: List[_] =>
+      context.become(inProcess(queue, itemIds ::: ids.collect { case id:Int => id}))
       self ! Next
 
     case Next =>
@@ -50,11 +51,7 @@ class ItemLoader(itemActor: ActorRef, api: ActorRef) extends Actor with ActorLog
       self ! Next
   }
 
-  override def receive: Actor.Receive = {
-    case Update =>
-      log.info(s"Update - start!")
-      api ! ApiActor.GetUniverseTypes()
-  }
+  override def receive: Actor.Receive = idle
 
   private case class Task(msg: AnyRef, sender: ActorRef)
   private case object Next

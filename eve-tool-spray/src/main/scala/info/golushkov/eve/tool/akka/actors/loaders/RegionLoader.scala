@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.util.Timeout
 import info.golushkov.eve.tool.akka.actors.ApiActor
+import info.golushkov.eve.tool.akka.actors.ApiActor.ResultAsIdsList
 import info.golushkov.eve.tool.akka.actors.mongo.RegionActor
 import info.golushkov.eve.tool.akka.models._
 
@@ -23,7 +24,7 @@ class RegionLoader(regionActor: ActorRef, api: ActorRef) extends Actor with Acto
       log.info(s"Update - start!")
       api ! ApiActor.GetUniverseRegions
 
-    case ids: List[Int] =>
+    case ResultAsIdsList(ids) =>
       log.info(s"Load regionIds [${ids.size}]")
       regionIds = ids
       self ! Next

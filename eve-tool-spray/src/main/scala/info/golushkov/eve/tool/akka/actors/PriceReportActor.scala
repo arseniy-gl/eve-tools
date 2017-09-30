@@ -7,11 +7,12 @@ import akka.pattern.ask
 import akka.pattern.pipe
 import akka.util.Timeout
 import info.golushkov.eve.tool.akka.actors.mongo.RegionActor.GetAllResult
-import info.golushkov.eve.tool.akka.actors.mongo.{ItemActor, OrdersActor, PriceActor, RegionActor}
-import info.golushkov.eve.tool.akka.models.{Item, Order, Price, PriceReportRow}
+import info.golushkov.eve.tool.akka.actors.mongo.{ItemActor, OrdersActor, RegionActor}
+import info.golushkov.eve.tool.akka.models.{Item, Order, PriceReportRow}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.language.postfixOps
 
 class PriceReportActor(
                         itemActor: ActorRef,
@@ -21,7 +22,7 @@ class PriceReportActor(
   implicit val executionContext: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val to: Timeout = Timeout(5 seconds)
 
-  override def receive = {
+  override def receive:Actor.Receive = {
     case MakeReport(id) =>
       (for {
         items <- (itemActor ? ItemActor.GetOnId(id)).map(_.asInstanceOf[Option[Item]])
@@ -32,7 +33,7 @@ class PriceReportActor(
               .map { res =>
                 i -> res.asInstanceOf[List[Order]]
               }
-          }
+          } toList
         }
       } yield {
         ordersWithItem
@@ -47,7 +48,6 @@ class PriceReportActor(
                     bestSell = _orders.filterNot(_.isBuy).map(_.price).min)
               }
           }
-          .toList
       }) pipeTo sender()
 
   }
