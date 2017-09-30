@@ -25,6 +25,8 @@ ext {
 }
 
 dependencies {
+    compile 'org.scala-lang:scala-library:2.12.3'
+
     compile "com.fasterxml.jackson.module:jackson-module-scala_2.12:$jackson_version"
     compile "com.sun.jersey:jersey-client:$jersey_version"
     compile "com.sun.jersey.contribs:jersey-multipart:$jersey_version"
